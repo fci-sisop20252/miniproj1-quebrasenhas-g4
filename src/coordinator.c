@@ -64,10 +64,13 @@ void index_to_password(long long index, const char *charset, int charset_len,
 int main(int argc, char *argv[]) {
     // TODO 1: Validar argumentos de entrada
     // Verificar se argc == 5 (programa + 4 argumentos)
-    // Se não, imprimir mensagem de uso e sair com código 1
+   // Se não, imprimir mensagem de uso e sair com código 1
     
     // IMPLEMENTE AQUI: verificação de argc e mensagem de erro
-    
+    if(argc != 5){
+	printf("Erro: número invalido de argumentos.");
+	exit(1);
+    }
     // Parsing dos argumentos (após validação)
     const char *target_hash = argv[1];
     int password_len = atoi(argv[2]);
