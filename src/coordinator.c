@@ -82,6 +82,21 @@ int main(int argc, char *argv[]) {
     // - password_len deve estar entre 1 e 10
     // - num_workers deve estar entre 1 e MAX_WORKERS
     // - charset não pode ser vazio
+
+    if(password_len <=0 || password_len >= 11){
+        printf("password_len deve estar entre 1 e 10");
+        exit(1);
+    }
+    if(num_workers <=0 || num_workers > MAX_WORKERS){
+        printf("num_workers deve estar entre 1 e MAX_WORKERS");
+        exit(1);
+    }
+
+    if(charset == NULL || charset[0] == '\0'){
+        printf("charset não pode ser vazio");
+        exit(1);
+    }
+
     
     printf("=== Mini-Projeto 1: Quebra de Senhas Paralelo ===\n");
     printf("Hash MD5 alvo: %s\n", target_hash);
@@ -106,6 +121,9 @@ int main(int argc, char *argv[]) {
     // IMPLEMENTE AQUI:
     // long long passwords_per_worker = ?
     // long long remaining = ?
+
+    long long passwords_per_worker = total_space / num_workers;
+    long long remaining = total_space % num_workers;
     
     // Arrays para armazenar PIDs dos workers
     pid_t workers[MAX_WORKERS];
@@ -116,11 +134,47 @@ int main(int argc, char *argv[]) {
     // IMPLEMENTE AQUI: Loop para criar workers
     for (int i = 0; i < num_workers; i++) {
         // TODO: Calcular intervalo de senhas para este worker
+        long long start_index = i * passwords_per_worker;
+        if(i < remaining){
+            start_index += i;
+        }
+        else{
+            start_index += remaining;
+        }
+        long long end_index = start_index + passwords_per_worker - 1;
+        if(i < remaining){
+            end_index++;
+        } 
+        
         // TODO: Converter indices para senhas de inicio e fim
+
+        char start_str[32];
+        char end_str[32];
+        char worker_id[16];
+
+        sprintf(start_str, "%lld", start_index);
+        sprintf(end_str, "%lld", end_index);
+        sprintf(worker_id, "%d", i);
+
         // TODO 4: Usar fork() para criar processo filho
-        // TODO 5: No processo pai: armazenar PID
-        // TODO 6: No processo filho: usar execl() para executar worker
+
+        pid_t pid = fork();
         // TODO 7: Tratar erros de fork() e execl()
+        if(pid < 0){
+            perror("Erro ao criar processo");
+            exit(1);
+        }
+        // TODO 6: No processo filho: usar execl() para executar worker
+        else if(pid == 1){
+            execl("./worker","./worker", target_hash, charset, start_str, end_str, worker_id, (char *)NULL);
+
+            perror("Erro ao executar o worker");
+            exit(1);
+        }
+        else{
+            // TODO 5: No processo pai: armazenar PID
+            workers[i] = pid;
+        }        
     }
     
     printf("\nTodos os workers foram iniciados. Aguardando conclusão...\n");
