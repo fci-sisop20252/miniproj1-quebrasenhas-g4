@@ -71,6 +71,7 @@ int check_result_exists() {
  * Usa O_CREAT | O_EXCL para garantir escrita atômica (apenas um worker escreve)
  */
 void save_result(int worker_id, const char *password) {
+
     // TODO 2: Implementar gravação atômica do resultado
     // OBJETIVO: Garantir que apenas UM worker escreva no arquivo
     // DICA: Use O_CREAT | O_EXCL - falha se arquivo já existe
@@ -80,6 +81,14 @@ void save_result(int worker_id, const char *password) {
     // - Tentar abrir arquivo com O_CREAT | O_EXCL | O_WRONLY
     // - Se sucesso: escrever resultado e fechar
     // - Se falhou: outro worker já encontrou
+
+        int fd = open(RESULT_FILE, O_WRONLY | O_CREAT | O_EXCL, 0644);
+            if(fd >= 0){
+                char linha[128];
+                int escri = snprintf(linha, sizeof(linha), "%d:%s\n", worker_id, password);
+                write(fd, linha, escri);
+                close(fd);
+            }
 }
 
 /**

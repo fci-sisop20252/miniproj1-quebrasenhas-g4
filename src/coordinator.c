@@ -165,7 +165,7 @@ int main(int argc, char *argv[]) {
             exit(1);
         }
         // TODO 6: No processo filho: usar execl() para executar worker
-        else if(pid == 1){
+        else if(pid == 0){
             execl("./worker","./worker", target_hash, charset, start_str, end_str, worker_id, (char *)NULL);
 
             perror("Erro ao executar o worker");
@@ -188,7 +188,35 @@ int main(int argc, char *argv[]) {
     // - Identificar qual worker terminou
     // - Verificar se terminou normalmente ou com erro
     // - Contar quantos workers terminaram
-    
+    int workersTerminaram = 0;
+    while(workersTerminaram < num_workers){
+        int status;
+        pid_t wpid = wait(&status);
+
+        if(wpid == -1){
+            perror("Erro no wait");
+            break;
+        }
+        int workerIndex;
+        for(int i = 0; i < num_workers; i++){
+            if(workers[i] == wpid){
+                workerIndex = i;
+                break;
+            }
+        }
+        
+        if((WIFEXITED(status)) == 1){ //testa se o processo filho terminou sem erro
+            printf("O worker %d de PID %d terminou normalmente\n", workerIndex, wpid);
+
+    }
+        else{
+            printf("O worker %d de PID %d terminou com erro", workerIndex, wpid);
+        }
+        workersTerminaram++;
+    }
+
+    printf("Total de terminos: %d/%d", workersTerminaram, num_workers);
+
     // Registrar tempo de fim
     time_t end_time = time(NULL);
     double elapsed_time = difftime(end_time, start_time);
@@ -204,7 +232,29 @@ int main(int argc, char *argv[]) {
     // - Fazer parse do formato "worker_id:password"
     // - Verificar o hash usando md5_string()
     // - Exibir resultado encontrado
-    
+    FILE *fp = fopen(RESULT_FILE, "r");
+    if(fp != NULL){
+        char vet[128];
+        if((fgets(vet,sizeof(vet), fp)) != NULL){
+            char worker_id[16];
+            char password[64];
+            if(sscanf(vet,"%15[^:]:%63s", worker_id, password) == 2){
+                char verificaHash[33];
+                md5_string(password, verificaHash);
+
+                if(strcmp(verificaHash, target_hash) == 0){
+                    printf("O worker de PID %s encontrou a senha: %s\n", worker_id, password);
+                }
+                else{
+                    printf("Senha nao bate com o hash");
+                }  
+            }
+        }
+        fclose(fp);
+    }
+    else{
+        printf("Senha nao encontrada");
+    }
     // Estatísticas finais (opcional)
     // TODO: Calcular e exibir estatísticas de performance
     
