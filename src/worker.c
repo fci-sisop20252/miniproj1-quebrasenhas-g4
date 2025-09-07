@@ -169,7 +169,7 @@ int main(int argc, char *argv[]) {
         
         // TODO: Verificar se chegou ao fim do intervalo
         // Se sim: terminar loop
-        if(strcmp(current_password, end_password) == 0){
+        if(strcmp(current_password, end_password) > 0){
             break;
         }
         
