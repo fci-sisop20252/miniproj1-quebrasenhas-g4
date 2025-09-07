@@ -51,6 +51,7 @@ long long calculate_search_space(int charset_len, int password_len) {
  */
 void index_to_password(long long index, const char *charset, int charset_len, 
                        int password_len, char *output) {
+    
     for (int i = password_len - 1; i >= 0; i--) {
         output[i] = charset[index % charset_len];
         index /= charset_len;
@@ -148,15 +149,17 @@ int main(int argc, char *argv[]) {
         
         // TODO: Converter indices para senhas de inicio e fim
 
-        char start_str[32];
-        char end_str[32];
-        char worker_id[16];
-
-        sprintf(start_str, "%lld", start_index);
-        sprintf(end_str, "%lld", end_index);
-        sprintf(worker_id, "%d", i);
-
+        char start_password[32];
+        char end_password[32];
+        index_to_password(start_index, charset, charset_len, password_len, start_password);
+        index_to_password(end_index, charset, charset_len, password_len, end_password);
+        
+        char charset_len_str[16];
+        char worker_id_str[16];
+        sprintf(charset_len_str, "%d", charset_len);
+        sprintf(worker_id_str, "%d", i);
         // TODO 4: Usar fork() para criar processo filho
+
 
         pid_t pid = fork();
         // TODO 7: Tratar erros de fork() e execl()
@@ -166,7 +169,7 @@ int main(int argc, char *argv[]) {
         }
         // TODO 6: No processo filho: usar execl() para executar worker
         else if(pid == 0){
-            execl("./worker","./worker", target_hash, charset, start_str, end_str, worker_id, (char *)NULL);
+            execl("./worker","./worker", target_hash, start_password, end_password, charset, charset_len_str, worker_id_str, (char *)NULL);
 
             perror("Erro ao executar o worker");
             exit(1);
@@ -197,7 +200,7 @@ int main(int argc, char *argv[]) {
             perror("Erro no wait");
             break;
         }
-        int workerIndex;
+        int workerIndex = -1;
         for(int i = 0; i < num_workers; i++){
             if(workers[i] == wpid){
                 workerIndex = i;
@@ -206,7 +209,8 @@ int main(int argc, char *argv[]) {
         }
         
         if((WIFEXITED(status)) == 1){ //testa se o processo filho terminou sem erro
-            printf("O worker %d de PID %d terminou normalmente\n", workerIndex, wpid);
+            int codigoSaida = WEXITSTATUS(status);
+            printf("O worker %d de PID %d terminou normalmente com o codigo %d\n", workerIndex, wpid, codigoSaida);
 
     }
         else{
@@ -232,31 +236,45 @@ int main(int argc, char *argv[]) {
     // - Fazer parse do formato "worker_id:password"
     // - Verificar o hash usando md5_string()
     // - Exibir resultado encontrado
-    FILE *fp = fopen(RESULT_FILE, "r");
-    if(fp != NULL){
+    int fd = open(RESULT_FILE, O_RDONLY);
+    if(fd >= 0){
         char vet[128];
-        if((fgets(vet,sizeof(vet), fp)) != NULL){
-            char worker_id[16];
-            char password[64];
-            if(sscanf(vet,"%15[^:]:%63s", worker_id, password) == 2){
-                char verificaHash[33];
-                md5_string(password, verificaHash);
+        ssize_t bytesLidos = read(fd, vet, sizeof(vet) - 1); 
+        if(bytesLidos > 0){
+            vet[bytesLidos] = '\0';
+            char *separa = strchr(vet, ':');
 
-                if(strcmp(verificaHash, target_hash) == 0){
-                    printf("O worker de PID %s encontrou a senha: %s\n", worker_id, password);
+            if(separa){
+                printf("aqui");
+                *separa = '\0';
+                char *worker_id = vet;
+                char *password = separa + 1;
+
+                char *novaLinha = strchr(password, '\n');
+                if(novaLinha){
+                    *novaLinha = '\0';
                 }
-                else{
-                    printf("Senha nao bate com o hash");
-                }  
+
+                char vericaHash[33];
+                md5_string(password, vericaHash);
+
+                if(strcmp(vericaHash, target_hash) == 0){
+                    printf("O worker %s encontrou a senha: %s\n", worker_id, password);
+                }
+
             }
         }
-        fclose(fp);
+        close(fd);
     }
     else{
-        printf("Senha nao encontrada");
+        printf("Senha nao encontrada\n");
     }
+
     // Estatísticas finais (opcional)
     // TODO: Calcular e exibir estatísticas de performance
+    
+    printf("Tempo total gasto: %.2f segundos\n", elapsed_time);
+
     
     return 0;
 }
