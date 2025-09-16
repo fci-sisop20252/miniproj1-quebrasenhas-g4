@@ -154,9 +154,9 @@ int main(int argc, char *argv[]) {
         index_to_password(start_index, charset, charset_len, password_len, start_password);
         index_to_password(end_index, charset, charset_len, password_len, end_password);
         
-        char charset_len_str[16];
+        char password_len_str[16];
         char worker_id_str[16];
-        sprintf(charset_len_str, "%d", charset_len);
+        sprintf(password_len_str, "%d", password_len);
         sprintf(worker_id_str, "%d", i);
         // TODO 4: Usar fork() para criar processo filho
 
@@ -169,7 +169,7 @@ int main(int argc, char *argv[]) {
         }
         // TODO 6: No processo filho: usar execl() para executar worker
         else if(pid == 0){
-            execl("./worker","./worker", target_hash, start_password, end_password, charset, charset_len_str, worker_id_str, (char *)NULL);
+            execl("./worker","./worker", target_hash, start_password, end_password, charset, password_len_str, worker_id_str, (char *)NULL);
 
             perror("Erro ao executar o worker");
             exit(1);
@@ -245,7 +245,6 @@ int main(int argc, char *argv[]) {
             char *separa = strchr(vet, ':');
 
             if(separa){
-                printf("aqui");
                 *separa = '\0';
                 char *worker_id = vet;
                 char *password = separa + 1;
