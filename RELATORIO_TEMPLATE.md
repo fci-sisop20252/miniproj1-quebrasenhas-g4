@@ -1,6 +1,6 @@
 # Relatório: Mini-Projeto 1 - Quebra-Senhas Paralelo
 
-**Aluno(s):** Nome (Matrícula), Nome (Matrícula),,,  
+**Aluno(s):** Caio Cesar Navarro Pugliese (10436413), Erik Dong Kyu Kang (10439715), Matheus Lemos Rosal do valle (10442011), Rodrigo Daiske Uehara (10440295).
 ---
 
 ## 1. Estratégia de Paralelização
